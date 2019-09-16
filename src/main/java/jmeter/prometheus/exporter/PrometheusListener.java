@@ -40,6 +40,7 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 	private String samplesRegEx = "";
 	private String regexForSampleList = null;
 	private boolean getEverySample = false;
+	private boolean useAnnotations = true;
 
 	private transient Server server;
 	private transient Gauge threadCountCollector;
@@ -133,15 +134,27 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 
 		getSamplesFilter(context);
 
-		setupInfluxClient(context);
+		try {
+			setupInfluxClient(context);
+		} catch(Exception e) {
+			useAnnotations = false;
 
-		writeInfluxAnnotation(TestStartEndMeasurement.Values.STARTED);
+			System.out.printf("[WARN] Unable to connect to influx %s:%s"
+				, context.getParameter(InfluxDBConfig.KEY_INFLUX_DB_HOST)
+				, context.getParameter(InfluxDBConfig.KEY_INFLUX_DB_PORT));
+		}
+
+		if (useAnnotations) {
+			writeInfluxAnnotation(TestStartEndMeasurement.Values.STARTED);
+		}
 	}
 
 	@Override
 	public void teardownTest(BackendListenerContext context) throws Exception {
 
-		writeInfluxAnnotation(TestStartEndMeasurement.Values.FINISHED);
+		if (useAnnotations) {
+			writeInfluxAnnotation(TestStartEndMeasurement.Values.FINISHED);
+		}
 
 		stopExportingServer();
 
