@@ -26,8 +26,13 @@ import static jmeter.influx.writer.config.influxdb.RequestMeasurement.Tags.*;
 import jmeter.influx.writer.config.influxdb.InfluxDBConfig;
 import jmeter.influx.writer.config.influxdb.TestStartEndMeasurement;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class PrometheusListener extends AbstractBackendListenerClient {
+
+	private static final Logger log = LoggerFactory.getLogger(PrometheusListener.class);
 
 	private static final String KEY_TEST_NAME = "testName";
 	private static final String KEY_RUN_ID = "runId";
@@ -45,6 +50,7 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 	private transient Server server;
 	private transient Gauge threadCountCollector;
 	private transient Summary responseTimeCollector;
+	private transient Summary latencyCollector;
 	private transient Counter requestCollector;
 
 	private String[] threadCountLabels;
@@ -77,11 +83,14 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 		List<SampleResult> allSampleResults = gatherAllResults(sampleResults);
 
 		for(SampleResult sampleResult: allSampleResults) {
-			getUserMetrics().add(sampleResult);
+			if (!sampleResult.isSuccessful() && sampleResult.isResponseCodeOK() && sampleResult.getResponseMessage() != "") {
+				log.error("Assertion error: {}", sampleResult.getResponseDataAsString());
+			}
 
 			if ((regexForSampleList != null && sampleResult.getSampleLabel().matches(regexForSampleList)) || getEverySample) {
 				threadCountCollector.labels(getLabelValues(sampleResult, threadCountLabels)).set(sampleResult.getGroupThreads());
 				responseTimeCollector.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getTime());
+				latencyCollector.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getLatency());
 				requestCollector.labels(getLabelValues(sampleResult, requestLabels)).inc();
 			}
 		}
@@ -139,7 +148,7 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 		} catch(Exception e) {
 			useAnnotations = false;
 
-			System.out.printf("[WARN] Unable to connect to influx %s:%s"
+			System.out.printf("[WARN] Unable to connect to influx %s:%s\n"
 				, context.getParameter(InfluxDBConfig.KEY_INFLUX_DB_HOST)
 				, context.getParameter(InfluxDBConfig.KEY_INFLUX_DB_PORT));
 		}
@@ -189,7 +198,13 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 				.help("Summary for sample duration in ms")
 				.labelNames((String[]) ArrayUtils.addAll(responseTimeLabels, defaultLabels))
 				.quantile(0.9, 0.05)
-				.maxAgeSeconds(5)
+				.create()
+				.register(CollectorRegistry.defaultRegistry);
+		latencyCollector = Summary.build()
+				.name("jmeter_latency")
+				.help("Summary for sample ttfb in ms")
+				.labelNames((String[]) ArrayUtils.addAll(responseTimeLabels, defaultLabels))
+				.quantile(0.9, 0.05)
 				.create()
 				.register(CollectorRegistry.defaultRegistry);
 		requestCollector = Counter.build()
@@ -277,8 +292,8 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 	public String getRequestStatus(SampleResult sampleResult)
 			throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
 
-		return SampleResult.class.getMethod("getErrorCount").invoke(sampleResult).toString()
-				.equals("0") ? "PASS" : "FAIL";
+		return SampleResult.class.getMethod("isSuccessful").invoke(sampleResult)
+				.equals(true) ? "PASS" : "FAIL";
 	}
 
 	public String getRequestName(SampleResult sampleResult)
