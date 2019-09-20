@@ -3,6 +3,7 @@ package jmeter.prometheus.exporter;
 import io.prometheus.client.*;
 import io.prometheus.client.exporter.MetricsServlet;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.jmeter.assertions.AssertionResult;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient;
@@ -84,7 +85,11 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 
 		for(SampleResult sampleResult: allSampleResults) {
 			if (!sampleResult.isSuccessful() && sampleResult.isResponseCodeOK() && sampleResult.getResponseMessage() != "") {
-				log.error("Assertion error: {}", sampleResult.getResponseDataAsString());
+				log.error("===== Assertion error =====");
+				for(AssertionResult assertionResult : sampleResult.getAssertionResults()) {
+					log.error("Expected: {}", assertionResult.getFailureMessage());
+				}
+				log.error("Received: {}", sampleResult.getResponseDataAsString());
 			}
 
 			if ((regexForSampleList != null && sampleResult.getSampleLabel().matches(regexForSampleList)) || getEverySample) {
