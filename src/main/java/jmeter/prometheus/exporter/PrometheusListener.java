@@ -53,10 +53,15 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 	private transient Summary responseTimeCollector;
 	private transient Summary latencyCollector;
 	private transient Counter requestCollector;
+	private transient Summary requestSizeCollector;
+
+	private String[] requestSent = new String[]{"sent"};
+	private String[] requestReceived = new String[]{"received"};
 
 	private String[] threadCountLabels;
 	private String[] responseTimeLabels;
 	private String[] requestLabels;
+	private String[] requestSizeLabels;
 
 	private HashMap<String, Method> methodsMap = new HashMap<>();
 	private String[] defaultLabels;
@@ -97,6 +102,10 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 				responseTimeCollector.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getTime());
 				latencyCollector.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getLatency());
 				requestCollector.labels(getLabelValues(sampleResult, requestLabels)).inc();
+				requestSizeCollector.labels((String[]) ArrayUtils.addAll(requestSent, getLabelValues(sampleResult, responseTimeLabels)))
+					.observe(sampleResult.getSentBytes());
+				requestSizeCollector.labels((String[]) ArrayUtils.addAll(requestReceived, getLabelValues(sampleResult, responseTimeLabels)))
+					.observe(sampleResult.getBytesAsLong());
 			}
 		}
 	}
@@ -191,6 +200,7 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 		threadCountLabels = new String[]{ THREAD_GROUP };
 		responseTimeLabels = new String[]{ REQUEST_NAME };
 		requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS };
+		requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME };
 
 		threadCountCollector = Gauge.build()
 				.name("jmeter_running_threads")
@@ -220,6 +230,13 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 				.name("jmeter_requests")
 				.help("Counter for requests")
 				.labelNames((String[]) ArrayUtils.addAll(requestLabels, defaultLabels))
+				.create()
+				.register(CollectorRegistry.defaultRegistry);
+		requestSizeCollector = Summary.build()
+				.name("jmeter_request_size_in_bytes")
+				.help("Summary for jmeter request size in bytes")
+				// костыль пиздец
+				.labelNames((String[]) ArrayUtils.addAll(requestSizeLabels, defaultLabels))
 				.create()
 				.register(CollectorRegistry.defaultRegistry);
 	}
