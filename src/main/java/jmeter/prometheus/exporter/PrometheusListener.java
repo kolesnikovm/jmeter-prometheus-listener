@@ -203,6 +203,7 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 				.help("Summary for sample duration in ms")
 				.labelNames((String[]) ArrayUtils.addAll(responseTimeLabels, defaultLabels))
 				.quantile(0.9, 0.05)
+				.quantile(0.95, 0.05)
 				.maxAgeSeconds(10)
 				.create()
 				.register(CollectorRegistry.defaultRegistry);
@@ -211,6 +212,7 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 				.help("Summary for sample ttfb in ms")
 				.labelNames((String[]) ArrayUtils.addAll(responseTimeLabels, defaultLabels))
 				.quantile(0.9, 0.05)
+				.quantile(0.95, 0.05)
 				.maxAgeSeconds(10)
 				.create()
 				.register(CollectorRegistry.defaultRegistry);
