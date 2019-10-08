@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 
 sourceCompatibility = 1.8
-version = '1.4.2'
+version = '1.5.0'
 def title = 'JMeterInfluxDBListener'
 
 jar {
