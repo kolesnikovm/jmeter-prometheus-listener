@@ -77,8 +77,9 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 		for (SampleResult sampleResult : sampleResults) {
 			allSampleResults.add(sampleResult);
 
-			for (SampleResult subResult : sampleResult.getSubResults()) {
-				allSampleResults.add(subResult);
+			List<SampleResult> subResults = Arrays.asList(sampleResult.getSubResults());
+			if (subResults.size() != 0) {
+				allSampleResults.addAll(gatherAllResults(subResults));
 			}
 		}
 
