@@ -8,6 +8,7 @@ import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient;
 import org.apache.jmeter.visualizers.backend.BackendListenerContext;
+import org.apache.jmeter.visualizers.backend.UserMetric;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -21,6 +22,9 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static jmeter.influx.writer.config.influxdb.RequestMeasurement.Tags.*;
@@ -31,7 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class PrometheusListener extends AbstractBackendListenerClient {
+public class PrometheusListener extends AbstractBackendListenerClient implements Runnable {
 
 	private static final Logger log = LoggerFactory.getLogger(PrometheusListener.class);
 
@@ -50,6 +54,7 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 
 	private transient Server server;
 	private transient Gauge threadCountCollector;
+	private transient Gauge activeThreadCollector;
 	private transient Summary responseTimeCollector;
 	private transient Summary latencyCollector;
 	private transient Counter requestCollector;
@@ -69,6 +74,9 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 
 	private InfluxDB influxDB;
 	InfluxDBConfig influxDBConfig;
+
+	private ScheduledExecutorService scheduler;
+	private ScheduledFuture<?> timerHandle;
 
 	private List<SampleResult> gatherAllResults(List<SampleResult> sampleResults) {
 
@@ -128,6 +136,13 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 	}
 
 	@Override
+	public void run() {
+		UserMetric userMetrics = getUserMetrics();
+
+		activeThreadCollector.labels(getDefaultLabelValues()).set(userMetrics.getStartedThreads() - userMetrics.getFinishedThreads());
+	}
+
+	@Override
 	public void setupTest(BackendListenerContext context) {
 		testName = context.getParameter(KEY_TEST_NAME, "Test");
 		runId = context.getParameter(KEY_RUN_ID, "System.currentTimeMillis()");
@@ -171,10 +186,22 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 		if (useAnnotations) {
 			writeInfluxAnnotation(TestStartEndMeasurement.Values.STARTED);
 		}
+
+		scheduler = Executors.newScheduledThreadPool(1);
+		this.timerHandle = scheduler.scheduleAtFixedRate(this, 0, 5, TimeUnit.SECONDS);
 	}
 
 	@Override
 	public void teardownTest(BackendListenerContext context) throws Exception {
+		boolean cancelState = timerHandle.cancel(false);
+		log.debug("Canceled state: {}", cancelState);
+		scheduler.shutdown();
+		try {
+			scheduler.awaitTermination(30, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			log.error("Error waiting for end of scheduler");
+			Thread.currentThread().interrupt();
+		}
 
 		if (useAnnotations) {
 			writeInfluxAnnotation(TestStartEndMeasurement.Values.FINISHED);
@@ -207,6 +234,12 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 				.name("jmeter_running_threads")
 				.help("Counter for running threads")
 				.labelNames((String[]) ArrayUtils.addAll(threadCountLabels, defaultLabels))
+				.create()
+				.register(CollectorRegistry.defaultRegistry);
+		activeThreadCollector = Gauge.build()
+				.name("jmeter_active_threads")
+				.help("Counter for active threads")
+				.labelNames((String[]) ArrayUtils.addAll(defaultLabels))
 				.create()
 				.register(CollectorRegistry.defaultRegistry);
 		responseTimeCollector = Summary.build()
@@ -309,6 +342,18 @@ public class PrometheusListener extends AbstractBackendListenerClient {
 				e.printStackTrace();
 			}
 		}
+		for(Map.Entry<String, String> label : defaultLabelsMap.entrySet()) {
+			labelValues[valuesIndex++] = label.getValue();
+		}
+
+		return labelValues;
+	}
+
+	private String[] getDefaultLabelValues() {
+
+		String[] labelValues = new String[defaultLabels.length];
+		int valuesIndex = 0;
+
 		for(Map.Entry<String, String> label : defaultLabelsMap.entrySet()) {
 			labelValues[valuesIndex++] = label.getValue();
 		}
