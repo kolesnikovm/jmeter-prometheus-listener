@@ -103,12 +103,13 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				for(AssertionResult assertionResult : sampleResult.getAssertionResults()) {
 					log.error("Expected: {}", assertionResult.getFailureMessage());
 				}
-				log.error("Received: {}", sampleResult.getResponseDataAsString());
+				log.error("Request: {}", sampleResult.getSamplerData());
+				log.error("Response: {}", sampleResult.getResponseDataAsString());
 			}
 
 			if ((regexForSampleList != null && sampleResult.getSampleLabel().matches(regexForSampleList)) || getEverySample) {
 				threadCountCollector.labels(getLabelValues(sampleResult, threadCountLabels)).set(sampleResult.getGroupThreads());
-				responseTimeCollector.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getTime());
+				responseTimeCollector.labels(getLabelValues(sampleResult, requestLabels)).observe(sampleResult.getTime());
 				latencyCollector.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getLatency());
 				requestCollector.labels(getLabelValues(sampleResult, requestLabels)).inc();
 				requestSizeCollector.labels((String[]) ArrayUtils.addAll(requestSent, getLabelValues(sampleResult, responseTimeLabels)))
@@ -122,16 +123,16 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	@Override
 	public Arguments getDefaultParameters() {
 		Arguments arguments = new Arguments();
-		arguments.addArgument(TEST_NAME, "Test");
-		arguments.addArgument(RUN_ID, "R001");
-		arguments.addArgument(EXPORTER_PORT, "9270");
+		arguments.addArgument(TEST_NAME, "project");
+		arguments.addArgument(RUN_ID, "1");
+		arguments.addArgument(EXPORTER_PORT, "9001");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_HOST, "localhost");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_PORT, Integer.toString(InfluxDBConfig.DEFAULT_PORT));
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_USER, "");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_PASSWORD, "");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_DATABASE, InfluxDBConfig.DEFAULT_DATABASE);
 		arguments.addArgument(InfluxDBConfig.KEY_RETENTION_POLICY, InfluxDBConfig.DEFAULT_RETENTION_POLICY);
-		arguments.addArgument(KEY_SAMPLERS_LIST, ".*UC.*");
+		arguments.addArgument(KEY_SAMPLERS_LIST, "UC.+");
 		return arguments;
 	}
 
@@ -245,7 +246,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		responseTimeCollector = Summary.build()
 				.name("jmeter_response_time")
 				.help("Summary for sample duration in ms")
-				.labelNames((String[]) ArrayUtils.addAll(responseTimeLabels, defaultLabels))
+				.labelNames((String[]) ArrayUtils.addAll(requestLabels, defaultLabels))
 				.quantile(0.9, 0.05)
 				.quantile(0.95, 0.05)
 				.maxAgeSeconds(10)
