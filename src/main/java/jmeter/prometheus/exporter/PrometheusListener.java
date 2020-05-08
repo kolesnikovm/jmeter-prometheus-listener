@@ -56,6 +56,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private transient Gauge threadCountCollector;
 	private transient Gauge activeThreadCollector;
 	private transient Summary responseTimeCollector;
+	private transient Summary responseTimeCollectorGeneral;
 	private transient Summary latencyCollector;
 	private transient Counter requestCollector;
 	private transient Summary requestSizeCollector;
@@ -110,6 +111,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 			if ((regexForSampleList != null && sampleResult.getSampleLabel().matches(regexForSampleList)) || getEverySample) {
 				threadCountCollector.labels(getLabelValues(sampleResult, threadCountLabels)).set(sampleResult.getGroupThreads());
 				responseTimeCollector.labels(getLabelValues(sampleResult, requestLabels)).observe(sampleResult.getTime());
+				responseTimeCollectorGeneral.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getTime());
 				latencyCollector.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getLatency());
 				requestCollector.labels(getLabelValues(sampleResult, requestLabels)).inc();
 				requestSizeCollector.labels((String[]) ArrayUtils.addAll(requestSent, getLabelValues(sampleResult, responseTimeLabels)))
@@ -247,6 +249,15 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.name("jmeter_response_time")
 				.help("Summary for sample duration in ms")
 				.labelNames((String[]) ArrayUtils.addAll(requestLabels, defaultLabels))
+				.quantile(0.9, 0.05)
+				.quantile(0.95, 0.05)
+				.maxAgeSeconds(10)
+				.create()
+				.register(CollectorRegistry.defaultRegistry);
+		responseTimeCollectorGeneral = Summary.build()
+				.name("jmeter_response_time_general")
+				.help("Summary for sample duration in ms")
+				.labelNames((String[]) ArrayUtils.addAll(responseTimeLabels, defaultLabels))
 				.quantile(0.9, 0.05)
 				.quantile(0.95, 0.05)
 				.maxAgeSeconds(10)
