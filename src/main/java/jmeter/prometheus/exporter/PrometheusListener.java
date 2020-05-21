@@ -99,16 +99,14 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		List<SampleResult> allSampleResults = gatherAllResults(sampleResults);
 
 		for(SampleResult sampleResult: allSampleResults) {
-			if ((regexForSampleList != null && sampleResult.getSampleLabel().matches(regexForSampleList)) || getEverySample) {
-				if (!sampleResult.isSuccessful() && sampleResult.getSubResults().length == 0) {
-					log.error("===== ERROR in {} =====\nRequest:\n{}\nResponse:\n{}",
-							sampleResult.getSampleLabel(),
-							sampleResult.getSamplerData(),
-							sampleResult.getResponseDataAsString());
-//					log.error("Request: {}", sampleResult.getSamplerData());
-//					log.error("Response: {}", sampleResult.getResponseDataAsString());
-				}
+			if (!sampleResult.isSuccessful() && sampleResult.getSubResults().length == 0) {
+				log.error("===== ERROR in {} =====\nRequest:\n{}\nResponse:\n{}",
+						sampleResult.getSampleLabel(),
+						sampleResult.getSamplerData(),
+						sampleResult.getResponseDataAsString());
+			}
 
+			if ((regexForSampleList != null && sampleResult.getSampleLabel().matches(regexForSampleList)) || getEverySample) {
 				threadCountCollector.labels(getLabelValues(sampleResult, threadCountLabels)).set(sampleResult.getGroupThreads());
 				responseTimeCollector.labels(getLabelValues(sampleResult, requestLabels)).observe(sampleResult.getTime());
 				responseTimeCollectorGeneral.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getTime());
