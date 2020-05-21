@@ -99,16 +99,16 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		List<SampleResult> allSampleResults = gatherAllResults(sampleResults);
 
 		for(SampleResult sampleResult: allSampleResults) {
-			if (!sampleResult.isSuccessful() && sampleResult.isResponseCodeOK() && sampleResult.getResponseMessage() != "") {
-				log.error("===== Assertion error =====");
-				for(AssertionResult assertionResult : sampleResult.getAssertionResults()) {
-					log.error("Expected: {}", assertionResult.getFailureMessage());
-				}
-				log.error("Request: {}", sampleResult.getSamplerData());
-				log.error("Response: {}", sampleResult.getResponseDataAsString());
-			}
-
 			if ((regexForSampleList != null && sampleResult.getSampleLabel().matches(regexForSampleList)) || getEverySample) {
+				if (!sampleResult.isSuccessful() && sampleResult.getSubResults().length == 0) {
+					log.error("===== ERROR in {} =====\nRequest:\n{}\nResponse:\n{}",
+							sampleResult.getSampleLabel(),
+							sampleResult.getSamplerData(),
+							sampleResult.getResponseDataAsString());
+//					log.error("Request: {}", sampleResult.getSamplerData());
+//					log.error("Response: {}", sampleResult.getResponseDataAsString());
+				}
+
 				threadCountCollector.labels(getLabelValues(sampleResult, threadCountLabels)).set(sampleResult.getGroupThreads());
 				responseTimeCollector.labels(getLabelValues(sampleResult, requestLabels)).observe(sampleResult.getTime());
 				responseTimeCollectorGeneral.labels(getLabelValues(sampleResult, responseTimeLabels)).observe(sampleResult.getTime());
