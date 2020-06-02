@@ -93,6 +93,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		return allSampleResults;
 	}
 
+	@Override
 	public void handleSampleResults(List<SampleResult> sampleResults, BackendListenerContext context) {
 		List<SampleResult> allSampleResults = gatherAllResults(sampleResults);
 
@@ -152,7 +153,9 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		runId = context.getParameter(RUN_ID_KEY);
 		try {
 			nodeName = InetAddress.getLocalHost().getHostName();
-		} catch (UnknownHostException e) {}
+		} catch (UnknownHostException e) {
+			log.warn("Failed to get host name");
+		}
 
 
 		HashMap<String, String> defaultLabelsMap = new HashMap<>();
@@ -254,13 +257,18 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		try {
 			server.start();
 			System.out.println("[INFO] Exporting metrics at " + port);
-		} catch (Exception e) {}
+		} catch (Exception e) {
+			log.error("Failed to start metrics server");
+			System.out.println("[ERROR] Failed to start metrics server");
+		}
 	}
 
 	private void stopExportingServer() {
 		try {
 			server.stop();
-		} catch (Exception e) {}
+		} catch (Exception e) {
+			log.warn("Failed to stop metrics server");
+		}
 	}
 
 	private String[] getLabelValues(SampleResult sampleResult, String[] labels) {
