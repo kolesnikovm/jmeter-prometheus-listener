@@ -318,7 +318,9 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	}
 
 	public String getThreadGroup(SampleResult sampleResult) {
-		return sampleResult.getThreadName().substring(0, sampleResult.getThreadName().lastIndexOf(32));
+		return sampleResult.getThreadName()
+				.substring(0, sampleResult.getThreadName().lastIndexOf(32))
+				.replace("-ThreadStarter", "");
 	}
 
 }
