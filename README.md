@@ -33,6 +33,6 @@ Every metric has default label set `testName, runId, nodeName` and also may have
 | jmeter_active_threads | Gauge | | |
 | jmeter_running_threads | Gauge | threadGroup | |
 | jmeter_requests | Counter | requestName, requestStatus, responseCode, responseMessage | |
-| jmeter_response_time | Summary | requestName, requestStatus, responseCode, responseMessage | Quantiles: 0.9, 0.95 with max age 10 seconds |
-| jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage | Quantiles: 0.9, 0.95 with max age 10 seconds |
+| jmeter_response_time | Summary | requestName, requestStatus, responseCode, responseMessage | Quantiles: 0.9, 0.95, 0.99 with max age 10 seconds |
+| jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage | Quantiles: 0.9, 0.95, 0.99 with max age 10 seconds |
 | jmeter_request_size_in_bytes | Summary | requestName, requestDirection | |
