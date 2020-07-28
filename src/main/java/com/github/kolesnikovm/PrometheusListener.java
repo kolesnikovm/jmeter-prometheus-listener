@@ -71,7 +71,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private String[] defaultLabelValues;
 	private String[] threadLabels = new String[]{ THREAD_GROUP };
 	private String[] requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS };
-	private String[] requestSizeLabels = new String[]{ REQUEST_NAME, REQUEST_DIRECTION };
+	private String[] requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME };
 
 	private transient Server server;
 	// Prometheus collectors
@@ -235,6 +235,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.labelNames(ArrayUtils.addAll(defaultLabels, requestLabels))
 				.quantile(0.9, 0.01)
 				.quantile(0.95, 0.01)
+				.quantile(0.99, 0.01)
 				.maxAgeSeconds(10)
 				.register();
 		latencyCollector = Summary.build()
@@ -243,6 +244,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.labelNames((String[]) ArrayUtils.addAll(defaultLabels, requestLabels))
 				.quantile(0.9, 0.01)
 				.quantile(0.95, 0.01)
+				.quantile(0.99, 0.01)
 				.maxAgeSeconds(10)
 				.register();
 		requestCollector = Counter.build()
