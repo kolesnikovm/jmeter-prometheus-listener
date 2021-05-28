@@ -22,6 +22,7 @@ dependencies {
 }
 
 task fatJar(type: Jar) {
+    classifier = 'fat'
     manifest {
         attributes 'Implementation-Title': title,
                 'Implementation-Version': version
@@ -42,7 +43,7 @@ task sourcesJar(type: Jar) {
 }
 
 artifacts {
-    archives javadocJar, sourcesJar
+    archives javadocJar, sourcesJar, fatJar
 }
 
 signing {
