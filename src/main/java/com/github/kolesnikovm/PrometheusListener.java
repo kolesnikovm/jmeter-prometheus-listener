@@ -253,7 +253,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.labelNames(ArrayUtils.addAll(defaultLabels, requestLabels))
 				.register();
 		requestSizeCollector = Summary.build()
-				.name("jmeter_request_size_in_bytes")
+				.name("jmeter_request_size")
 				.help("Summary for jmeter request size in bytes")
 				.labelNames(ArrayUtils.addAll(defaultLabels, requestSizeLabels))
 				.register();
@@ -274,8 +274,8 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 			server.start();
 			System.out.println("[INFO] Exporting metrics at " + port);
 		} catch (Exception e) {
-			log.error("Failed to start metrics server");
-			System.out.println("[ERROR] Failed to start metrics server");
+			log.error("Failed to start metrics server: {}", e);
+			System.out.println("[ERROR] Failed to start metrics server: " + e);
 		}
 	}
 
@@ -283,7 +283,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		try {
 			server.stop();
 		} catch (Exception e) {
-			log.warn("Failed to stop metrics server");
+			log.warn("Failed to stop metrics server: {}", e);
 		}
 	}
 
