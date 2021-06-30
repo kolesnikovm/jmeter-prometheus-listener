@@ -5,7 +5,7 @@ Apache JMeter Backend Listener implementation for Prometheus metrics exporting.
 ## Installation
 
 Download the [latest release](https://github.com/kolesnikovm/jmeter-prometheus-listener/releases/latest) or build your own from the source code.
-Then put `jmeter-prometheus-listener-plugin-x.x.x.jar` to `JMETER_HOME/lib/ext` directory.
+Then put `jmeter-prometheus-listener-x.x.x.jar` to `JMETER_HOME/lib/ext` directory.
 
 ## Usage
 
@@ -33,6 +33,6 @@ Every metric has default label set `testName, runId, nodeName` and also may have
 | jmeter_active_threads | Gauge | | |
 | jmeter_running_threads | Gauge | threadGroup | |
 | jmeter_requests | Counter | requestName, requestStatus, responseCode, responseMessage | |
-| jmeter_response_time | Summary | requestName, requestStatus, responseCode, responseMessage | Quantiles: 0.9, 0.95, 0.99 with max age 10 seconds |
-| jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage | Quantiles: 0.9, 0.95, 0.99 with max age 10 seconds |
-| jmeter_request_size_in_bytes | Summary | requestName, requestDirection | |
+| jmeter_response_time | Summary | requestName, requestStatus, responseCode, responseMessage | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 with max age 10 seconds |
+| jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 with max age 10 seconds |
+| jmeter_request_size | Summary | requestName, requestDirection | Unit: bytes |
