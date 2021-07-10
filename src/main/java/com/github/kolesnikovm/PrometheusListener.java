@@ -16,9 +16,11 @@ package com.github.kolesnikovm;
 
 import io.prometheus.client.*;
 import io.prometheus.client.exporter.MetricsServlet;
+import io.prometheus.client.hotspot.DefaultExports;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.samplers.SampleResult;
+import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient;
 import org.apache.jmeter.visualizers.backend.BackendListenerContext;
 import org.apache.jmeter.visualizers.backend.UserMetric;
@@ -48,6 +50,18 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static final String RUN_ID_KEY = "runId";
 	private static final String EXPORTER_PORT_KEY = "exporterPort";
 	private static final String SAMPLERS_LIST_KEY = "samplersRegExp";
+
+	// Property for enabling JVM metrics collection
+	public static final String PROMETHEUS_COLLECT_JVM = "prometheus.collect_jvm";
+	public static final boolean PROMETHEUS_COLLECT_JVM_DEFAULT = false;
+
+	private boolean collectJVM = JMeterUtils.getPropDefault(PROMETHEUS_COLLECT_JVM, PROMETHEUS_COLLECT_JVM_DEFAULT);
+
+	// Property for defining quantiles max age
+	public static final String PROMETHEUS_QUANTILES_AGE= "prometheus.quantiles_age";
+	public static final int PROMETHEUS_QUANTILES_AGE_DEFAULT = 10;
+
+	private int quantilesAge = JMeterUtils.getPropDefault(PROMETHEUS_QUANTILES_AGE, PROMETHEUS_QUANTILES_AGE_DEFAULT);
 
 	// General values with defaults
 	private static String testName = "project";
@@ -236,7 +250,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.quantile(0.9, 0.01)
 				.quantile(0.95, 0.01)
 				.quantile(0.99, 0.01)
-				.maxAgeSeconds(10)
+				.maxAgeSeconds(quantilesAge)
 				.register();
 		latencyCollector = Summary.build()
 				.name("jmeter_latency")
@@ -245,7 +259,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.quantile(0.9, 0.01)
 				.quantile(0.95, 0.01)
 				.quantile(0.99, 0.01)
-				.maxAgeSeconds(10)
+				.maxAgeSeconds(quantilesAge)
 				.register();
 		requestCollector = Counter.build()
 				.name("jmeter_requests")
@@ -263,6 +277,10 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 
 		CollectorRegistry.defaultRegistry.clear();
 		createSampleCollectors();
+
+		if (collectJVM) {
+			DefaultExports.initialize();
+		}
 
 		server = new Server(port);
 		ServletContextHandler context = new ServletContextHandler();

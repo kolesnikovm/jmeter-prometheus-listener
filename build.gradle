@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.kolesnikovm"
-version = '2.1.0'
+version = '2.2.0'
 sourceCompatibility = 1.8
 
 repositories {
@@ -21,6 +21,7 @@ dependencies {
     compileOnly 'org.apache.jmeter:ApacheJMeter_components:5.4.1', withoutBom
     implementation 'io.prometheus:simpleclient:0.9.0'
     implementation 'io.prometheus:simpleclient_servlet:0.9.0'
+    implementation 'io.prometheus:simpleclient_hotspot:0.9.0'
     implementation 'org.eclipse.jetty:jetty-servlet:9.4.41.v20210516'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
 }
