@@ -282,7 +282,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		createSampleCollectors();
 
 		if (collectJVM) {
-			DefaultExports.initialize();
+			DefaultExports.register(CollectorRegistry.defaultRegistry);
 		}
 
 		server = new Server(port);
