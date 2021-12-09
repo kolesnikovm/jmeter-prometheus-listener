@@ -39,14 +39,14 @@ Every metric has default label set `testName, runId, nodeName` and also may have
 | :---: | :---: | :---: | :---: |
 | jmeter_active_threads | Gauge | | |
 | jmeter_running_threads | Gauge | threadGroup | |
-| jmeter_requests | Counter | requestName, requestStatus, responseCode, responseMessage | |
-| jmeter_response_time | Summary | requestName, requestStatus, responseCode, responseMessage | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
-| jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
-| jmeter_request_size | Summary | requestName, requestDirection | Unit: bytes |
+| jmeter_requests | Counter | requestName, requestStatus, responseCode, responseMessage, isTransaction | |
+| jmeter_response_time | Summary | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
+| jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
+| jmeter_request_size | Summary | requestName, requestDirection, isTransaction | Unit: bytes |
 
 ## Dependency
 
-Plugin is hosted on Maven Central. You can find dependency [here](https://search.maven.org/artifact/io.github.kolesnikovm/jmeter-prometheus-listener). Example use with jmeter maven plugin:
+Plugin is hosted on Maven Central. You can find dependency [here](https://search.maven.org/artifact/io.github.kolesnikovm/jmeter-prometheus-listener). Example use with [jmeter-maven-plugin](https://github.com/jmeter-maven-plugin/jmeter-maven-plugin):
 
 ```xml
 <jmeterExtensions>
