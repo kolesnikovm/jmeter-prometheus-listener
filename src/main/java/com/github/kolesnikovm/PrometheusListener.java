@@ -19,6 +19,7 @@ import io.prometheus.client.exporter.MetricsServlet;
 import io.prometheus.client.hotspot.DefaultExports;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.jmeter.config.Arguments;
+import org.apache.jmeter.control.TransactionController;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.util.JMeterUtils;
 import org.apache.jmeter.visualizers.backend.AbstractBackendListenerClient;
@@ -80,12 +81,13 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static String THREAD_GROUP = "threadGroup";
 	private static String REQUEST_STATUS = "requestStatus";
 	private static String REQUEST_DIRECTION = "requestDirection";
+	private static String IS_TRANSACTION = "isTransaction";
 
 	private String[] defaultLabels;
 	private String[] defaultLabelValues;
 	private String[] threadLabels = new String[]{ THREAD_GROUP };
-	private String[] requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS };
-	private String[] requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME };
+	private String[] requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS, IS_TRANSACTION };
+	private String[] requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME, IS_TRANSACTION };
 
 	private transient Server server;
 	// Prometheus collectors
@@ -149,10 +151,10 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 						.labels(ArrayUtils.addAll(defaultLabelValues, getLabelValues(sampleResult, requestLabels)))
 						.inc();
 				requestSizeCollector
-						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestSent, sampleResult.getSampleLabel())))
+						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestSent, sampleResult.getSampleLabel(), isTransaction(sampleResult))))
 						.observe(sampleResult.getSentBytes());
 				requestSizeCollector
-						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestReceived, sampleResult.getSampleLabel())))
+						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestReceived, sampleResult.getSampleLabel(), isTransaction(sampleResult))))
 						.observe(sampleResult.getBytesAsLong());
 			}
 		}
@@ -199,7 +201,8 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 			methodsMap.put(RESPONSE_CODE, PrometheusListener.class.getMethod("getResponseCode", SampleResult.class));
 			methodsMap.put(RESPONSE_MESSAGE, PrometheusListener.class.getMethod("getResponseMessage", SampleResult.class));
 			methodsMap.put(THREAD_GROUP, PrometheusListener.class.getMethod("getThreadGroup", SampleResult.class));
-			methodsMap.put(REQUEST_STATUS,PrometheusListener.class.getMethod("getRequestStatus", SampleResult.class));
+			methodsMap.put(REQUEST_STATUS, PrometheusListener.class.getMethod("getRequestStatus", SampleResult.class));
+			methodsMap.put(IS_TRANSACTION, PrometheusListener.class.getMethod("isTransaction", SampleResult.class));
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
 		}
@@ -255,7 +258,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		latencyCollector = Summary.build()
 				.name("jmeter_latency")
 				.help("Summary for sample ttfb in ms")
-				.labelNames((String[]) ArrayUtils.addAll(defaultLabels, requestLabels))
+				.labelNames(ArrayUtils.addAll(defaultLabels, requestLabels))
 				.quantile(0.9, 0.01)
 				.quantile(0.95, 0.01)
 				.quantile(0.99, 0.01)
@@ -341,6 +344,10 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		return sampleResult.getThreadName()
 				.substring(0, sampleResult.getThreadName().lastIndexOf(32))
 				.replace("-ThreadStarter", "");
+	}
+
+	public String isTransaction(SampleResult sampleResult) {
+		return TransactionController.isFromTransactionController(sampleResult) ? "true" : "false";
 	}
 
 }
