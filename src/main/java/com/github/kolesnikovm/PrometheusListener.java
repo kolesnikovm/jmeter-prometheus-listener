@@ -352,9 +352,9 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		return TransactionController.isFromTransactionController(sampleResult) ? "true" : "false";
 	}
 	public String getParent(SampleResult sampleResult) {
-		if (sampleResult.getParent() != null){
-			return sampleResult.getParent().getSampleLabel();
+		if (sampleResult.getParent() == null){
+			return sampleResult.getSampleLabel();
 		}
-		return "null";
+		return getParent(sampleResult.getParent());
 	}
 }
