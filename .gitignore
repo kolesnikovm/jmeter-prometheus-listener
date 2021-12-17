@@ -8,7 +8,6 @@
 *.ear
 *.nar
 hs_err_pid*
-.build.gradle
 
 ##############################
 ## Gradle
