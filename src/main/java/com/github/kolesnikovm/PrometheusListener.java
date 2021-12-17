@@ -47,6 +47,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static final Logger log = LoggerFactory.getLogger(PrometheusListener.class);
 
 	// Labels used for user input
+	private static final String PROJECT_NAME_KEY = "projectName";
 	private static final String TEST_NAME_KEY = "testName";
 	private static final String RUN_ID_KEY = "runId";
 	private static final String EXPORTER_PORT_KEY = "exporterPort";
@@ -65,7 +66,8 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private int quantilesAge = JMeterUtils.getPropDefault(PROMETHEUS_QUANTILES_AGE, PROMETHEUS_QUANTILES_AGE_DEFAULT);
 
 	// General values with defaults
-	private static String testName = "project";
+	private static String projectName = "project name";
+	private static String testName = "test name";
 	private static String runId = "1";
 	private static int exporterPort = 9001;
 	private static String samplesRegEx = "UC.+";
@@ -75,6 +77,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static String REQUEST_NAME = "requestName";
 	private static String RESPONSE_CODE = "responseCode";
 	private static String RESPONSE_MESSAGE = "responseMessage";
+	private static String PROJECT_NAME = "projectName";
 	private static String TEST_NAME = "testName";
 	private static String NODE_NAME = "nodeName";
 	private static String RUN_ID = "runId";
@@ -82,12 +85,13 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static String REQUEST_STATUS = "requestStatus";
 	private static String REQUEST_DIRECTION = "requestDirection";
 	private static String IS_TRANSACTION = "isTransaction";
+	private static String PARENT = "parent";
 
 	private String[] defaultLabels;
 	private String[] defaultLabelValues;
 	private String[] threadLabels = new String[]{ THREAD_GROUP };
-	private String[] requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS, IS_TRANSACTION };
-	private String[] requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME, IS_TRANSACTION };
+	private String[] requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS, IS_TRANSACTION, PARENT };
+	private String[] requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME, IS_TRANSACTION, PARENT};
 
 	private transient Server server;
 	// Prometheus collectors
@@ -151,10 +155,10 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 						.labels(ArrayUtils.addAll(defaultLabelValues, getLabelValues(sampleResult, requestLabels)))
 						.inc();
 				requestSizeCollector
-						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestSent, sampleResult.getSampleLabel(), isTransaction(sampleResult))))
+						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestSent, sampleResult.getSampleLabel(), isTransaction(sampleResult),getParent(sampleResult))))
 						.observe(sampleResult.getSentBytes());
 				requestSizeCollector
-						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestReceived, sampleResult.getSampleLabel(), isTransaction(sampleResult))))
+						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestReceived, sampleResult.getSampleLabel(), isTransaction(sampleResult),getParent(sampleResult))))
 						.observe(sampleResult.getBytesAsLong());
 			}
 		}
@@ -163,6 +167,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	@Override
 	public Arguments getDefaultParameters() {
 		Arguments arguments = new Arguments();
+		arguments.addArgument(PROJECT_NAME_KEY, projectName);
 		arguments.addArgument(TEST_NAME_KEY, testName);
 		arguments.addArgument(RUN_ID_KEY, runId);
 		arguments.addArgument(EXPORTER_PORT_KEY, String.valueOf(exporterPort));
@@ -179,6 +184,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 
 	@Override
 	public void setupTest(BackendListenerContext context) {
+		projectName = context.getParameter(PROJECT_NAME_KEY);
 		testName = context.getParameter(TEST_NAME_KEY);
 		runId = context.getParameter(RUN_ID_KEY);
 		try {
@@ -189,6 +195,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 
 
 		HashMap<String, String> defaultLabelsMap = new HashMap<>();
+		defaultLabelsMap.put(PROJECT_NAME, projectName);
 		defaultLabelsMap.put(TEST_NAME, testName);
 		defaultLabelsMap.put(RUN_ID, runId);
 		defaultLabelsMap.put(NODE_NAME, nodeName);
@@ -203,6 +210,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 			methodsMap.put(THREAD_GROUP, PrometheusListener.class.getMethod("getThreadGroup", SampleResult.class));
 			methodsMap.put(REQUEST_STATUS, PrometheusListener.class.getMethod("getRequestStatus", SampleResult.class));
 			methodsMap.put(IS_TRANSACTION, PrometheusListener.class.getMethod("isTransaction", SampleResult.class));
+			methodsMap.put(PARENT, PrometheusListener.class.getMethod("getParent", SampleResult.class));
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
 		}
@@ -349,5 +357,10 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	public String isTransaction(SampleResult sampleResult) {
 		return TransactionController.isFromTransactionController(sampleResult) ? "true" : "false";
 	}
-
+	public String getParent(SampleResult sampleResult) {
+		if (sampleResult.getParent() == null){
+			return sampleResult.getSampleLabel();
+		}
+		return getParent(sampleResult.getParent());
+	}
 }
