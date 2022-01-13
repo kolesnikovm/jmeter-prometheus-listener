@@ -30,6 +30,7 @@ These parameters are set in Backend Listener element. All parameters are require
 | :---: | :---: | :---: |
 | prometheus.collect_jvm | false | Boolean parameter for enabling JVM metrics collection |
 | prometheus.quantiles_age | 10 | Max age in seconds for Summary collectors' quantiles |
+| prometheus.log_errors | false | Boolean parameter for enabling extended error logging |
 
 ## Metrics
 

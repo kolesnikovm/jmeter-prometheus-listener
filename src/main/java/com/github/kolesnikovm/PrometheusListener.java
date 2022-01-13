@@ -64,6 +64,12 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 
 	private int quantilesAge = JMeterUtils.getPropDefault(PROMETHEUS_QUANTILES_AGE, PROMETHEUS_QUANTILES_AGE_DEFAULT);
 
+	// Property for extended error logging
+	public static final String PROMETHEUS_LOG_ERRORS = "prometheus.log_errors";
+	public static final boolean PROMETHEUS_LOG_ERRORS_DEFAULT = false;
+
+	private boolean logErrors = JMeterUtils.getPropDefault(PROMETHEUS_LOG_ERRORS, PROMETHEUS_LOG_ERRORS_DEFAULT);
+
 	// General values with defaults
 	private static String testName = "project";
 	private static String runId = "1";
@@ -128,7 +134,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		List<SampleResult> allSampleResults = gatherAllResults(sampleResults);
 
 		for(SampleResult sampleResult: allSampleResults) {
-			if (!sampleResult.isSuccessful() && sampleResult.getSubResults().length == 0) {
+			if (logErrors && !sampleResult.isSuccessful() && sampleResult.getSubResults().length == 0) {
 				log.error("===== ERROR in {} =====\n" +
 						  "===== Request =====\n{}\n" +
 						  "===== Response =====\n{}",
