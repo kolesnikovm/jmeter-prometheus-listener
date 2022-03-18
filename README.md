@@ -45,6 +45,18 @@ Every metric has default label set `testName, runId, nodeName` and also may have
 | jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
 | jmeter_request_size | Summary | requestName, requestDirection, isTransaction | Unit: bytes |
 
+## Custom metrics
+
+Also, you can create your own custom collectors. See the documentation on [Prometheus JVM Client](https://github.com/prometheus/client_java).
+
+### Creation
+
+![Custom collector creation](/docs/images/collector_creation.jpeg?raw=true)
+
+### Usage
+
+![Custom collector usage](/docs/images/collector_usage.jpeg?raw=true)
+
 ## Dependency
 
 Plugin is hosted on Maven Central. You can find dependency [here](https://search.maven.org/artifact/io.github.kolesnikovm/jmeter-prometheus-listener). Example use with [jmeter-maven-plugin](https://github.com/jmeter-maven-plugin/jmeter-maven-plugin):
