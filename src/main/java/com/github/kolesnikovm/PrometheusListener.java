@@ -18,6 +18,7 @@ import io.prometheus.client.*;
 import io.prometheus.client.exporter.MetricsServlet;
 import io.prometheus.client.hotspot.DefaultExports;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.jmeter.assertions.AssertionResult;
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.control.TransactionController;
 import org.apache.jmeter.samplers.SampleResult;
@@ -58,6 +59,12 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 
 	private boolean collectJVM = JMeterUtils.getPropDefault(PROMETHEUS_COLLECT_JVM, PROMETHEUS_COLLECT_JVM_DEFAULT);
 
+	// Property for enabling assertion results collection
+	public static final String PROMETHEUS_COLLECT_ASSERTIONS = "prometheus.collect_assertions";
+	public static final boolean PROMETHEUS_COLLECT_ASSERTIONS_DEFAULT = false;
+
+	private boolean collectAssertions = JMeterUtils.getPropDefault(PROMETHEUS_COLLECT_ASSERTIONS, PROMETHEUS_COLLECT_ASSERTIONS_DEFAULT);
+
 	// Property for defining quantiles max age
 	public static final String PROMETHEUS_QUANTILES_AGE= "prometheus.quantiles_age";
 	public static final int PROMETHEUS_QUANTILES_AGE_DEFAULT = 10;
@@ -88,12 +95,15 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static String REQUEST_STATUS = "requestStatus";
 	private static String REQUEST_DIRECTION = "requestDirection";
 	private static String IS_TRANSACTION = "isTransaction";
+	private static String IS_FAILURE = "isFailure";
+	private static String FAILURE_MESSAGE = "failureMessage";
 
 	private String[] defaultLabels;
 	private String[] defaultLabelValues;
 	private String[] threadLabels = new String[]{ THREAD_GROUP };
 	private String[] requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS, IS_TRANSACTION };
 	private String[] requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME, IS_TRANSACTION };
+	private String[] assertionResultLabels = new String[]{ REQUEST_NAME, IS_FAILURE, FAILURE_MESSAGE };
 
 	private transient Server server;
 	// Prometheus collectors
@@ -103,6 +113,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private transient Summary latencyCollector;
 	private transient Counter requestCollector;
 	private transient Summary requestSizeCollector;
+	private transient Counter assertionResultCollector;
 
 	private String[] requestSent = new String[]{"sent"};
 	private String[] requestReceived = new String[]{"received"};
@@ -162,6 +173,13 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				requestSizeCollector
 						.labels(ArrayUtils.addAll(defaultLabelValues, ArrayUtils.addAll(requestReceived, sampleResult.getSampleLabel(), isTransaction(sampleResult))))
 						.observe(sampleResult.getBytesAsLong());
+				if (collectAssertions) {
+					for (AssertionResult assertionResult : sampleResult.getAssertionResults()) {
+						assertionResultCollector
+								.labels(ArrayUtils.addAll(defaultLabelValues, sampleResult.getSampleLabel(), String.valueOf(assertionResult.isFailure()), assertionResult.getFailureMessage()))
+								.inc();
+					}
+				}
 			}
 		}
 	}
@@ -279,6 +297,11 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.name("jmeter_request_size")
 				.help("Summary for jmeter request size in bytes")
 				.labelNames(ArrayUtils.addAll(defaultLabels, requestSizeLabels))
+				.register();
+		assertionResultCollector = Counter.build()
+				.name("jmeter_assertion_results")
+				.help("Counter for assertion results")
+				.labelNames(ArrayUtils.addAll(defaultLabels, assertionResultLabels))
 				.register();
 	}
 

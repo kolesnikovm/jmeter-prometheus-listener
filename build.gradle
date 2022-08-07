@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.github.kolesnikovm"
-version = '2.3.1'
+version = '2.4.0'
 sourceCompatibility = 1.8
 
 repositories {

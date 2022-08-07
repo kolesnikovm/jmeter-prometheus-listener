@@ -29,6 +29,7 @@ These parameters are set in Backend Listener element. All parameters are require
 | Property | Default | Comment |
 | :---: | :---: | :---: |
 | prometheus.collect_jvm | false | Boolean parameter for enabling JVM metrics collection |
+| prometheus.collect_assertions | false | Boolean parameter for enabling assertion results collection |
 | prometheus.quantiles_age | 10 | Max age in seconds for Summary collectors' quantiles |
 | prometheus.log_errors | false | Boolean parameter for enabling extended error logging |
 
@@ -44,6 +45,7 @@ Every metric has default label set `testName, runId, nodeName` and also may have
 | jmeter_response_time | Summary | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
 | jmeter_latency | Summary | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
 | jmeter_request_size | Summary | requestName, requestDirection, isTransaction | Unit: bytes |
+| jmeter_assertion_results | Counter | requestName, isFailure, failureMessage | |
 
 ## Custom metrics
 
