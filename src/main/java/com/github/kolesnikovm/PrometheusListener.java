@@ -52,6 +52,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static final String RUN_ID_KEY = "runId";
 	private static final String EXPORTER_PORT_KEY = "exporterPort";
 	private static final String SAMPLERS_LIST_KEY = "samplersRegExp";
+	private static final String SLO_LEVELS = "sloLevels";
 
 	// Property for enabling JVM metrics collection
 	public static final String PROMETHEUS_COLLECT_JVM = "prometheus.collect_jvm";
@@ -82,6 +83,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static String runId = "1";
 	private static int exporterPort = 9001;
 	private static String samplesRegEx = "UC.+";
+	private static String sloLevels = "0.1;1";
 	private static String nodeName = "Test-Node";
 
 	// Fields in metrics
@@ -110,6 +112,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private transient Gauge runningThreadsCollector;
 	private transient Gauge activeThreadsCollector;
 	private transient Summary responseTimeCollector;
+	private transient Histogram responseTimeHistogramCollector;
 	private transient Summary latencyCollector;
 	private transient Counter requestCollector;
 	private transient Summary requestSizeCollector;
@@ -161,6 +164,9 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				responseTimeCollector
 						.labels(ArrayUtils.addAll(defaultLabelValues, getLabelValues(sampleResult, requestLabels)))
 						.observe(sampleResult.getTime());
+				responseTimeHistogramCollector
+						.labels(ArrayUtils.addAll(defaultLabelValues, getLabelValues(sampleResult, requestLabels)))
+						.observe(sampleResult.getTime());
 				latencyCollector
 						.labels(ArrayUtils.addAll(defaultLabelValues, getLabelValues(sampleResult, requestLabels)))
 						.observe(sampleResult.getLatency());
@@ -191,6 +197,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 		arguments.addArgument(RUN_ID_KEY, runId);
 		arguments.addArgument(EXPORTER_PORT_KEY, String.valueOf(exporterPort));
 		arguments.addArgument(SAMPLERS_LIST_KEY, samplesRegEx);
+		arguments.addArgument(SLO_LEVELS, sloLevels);
 		return arguments;
 	}
 
@@ -231,6 +238,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 			e.printStackTrace();
 		}
 
+		sloLevels = context.getParameter(SLO_LEVELS);
 		exporterPort = context.getIntParameter(EXPORTER_PORT_KEY);
 		startExportingServer(exporterPort);
 
@@ -278,6 +286,12 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 				.quantile(0.95, 0.01)
 				.quantile(0.99, 0.01)
 				.maxAgeSeconds(quantilesAge)
+				.register();
+		responseTimeHistogramCollector = Histogram.build()
+				.name("jmeter_response_time_histogram")
+				.help("Histogram for sample duration in ms")
+				.labelNames(ArrayUtils.addAll(defaultLabels, requestLabels))
+				.buckets(parseSloLevels(sloLevels))
 				.register();
 		latencyCollector = Summary.build()
 				.name("jmeter_latency")
@@ -377,6 +391,17 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 
 	public String isTransaction(SampleResult sampleResult) {
 		return TransactionController.isFromTransactionController(sampleResult) ? "true" : "false";
+	}
+
+	public double[] parseSloLevels(String sloString) {
+		String[] sloStrings = sloString.split(";");
+		double[] sloArray = new double[sloStrings.length];
+
+		for (int i = 0; i < sloStrings.length; i++) {
+			sloArray[i] = Double.parseDouble(sloStrings[i]);
+		}
+
+		return sloArray;
 	}
 
 }
