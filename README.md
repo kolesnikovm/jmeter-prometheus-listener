@@ -1,6 +1,7 @@
 # Prometheus Listener for JMeter
 
 Apache JMeter Backend Listener implementation for Prometheus metrics exporting.
+Both pull-based and push-based models are supported through different implementations.
 
 ## Installation
 
@@ -10,29 +11,31 @@ Then put `jmeter-prometheus-listener-x.x.x.jar` to `JMETER_HOME/lib/ext` directo
 ## Usage
 
 1. Add `Listener->Backend Listener` to your Test Plan.
-2. Select `com.github.kolesnikovm.PrometheusListener` in Backend Listener implementation combobox.
+2. In the Backend Listener implementation combobox select `com.github.kolesnikovm.PrometheusListener` for pull-based model or `com.github.kolesnikovm.PrometheusPusher` for push-based one.
 3. Edit parameters to your taste.
 
 ## Parameters
 
 These parameters are set in Backend Listener element. All parameters are required.
 
-| Param | Type |                            Description                            |
-|:---:|:---:|:-----------------------------------------------------------------:|
-| testName | String |             Common label for all metrics in your test             |
-| runId | String |             Common label for all metrics in your test             |
-| exporterPort | int |             Port for exposing metrics, path `/metrics`            |
-| samplersRegExp | String |          Regular expression for filtering sample results          |
-| sloLevels | String | Buckets for `jmeter_response_time_histogram`. Semicolon delimited |
+| Param |  Type  |                                                     Description                                                      |
+|:---:|:------:|:--------------------------------------------------------------------------------------------------------------------:|
+| testName | String |                                      Common label for all metrics in your test                                       |
+| runId | String |                                      Common label for all metrics in your test                                       |
+| exporterPort |  int   | Port for exposing metrics, path `/metrics` <br/> Only for `com.github.kolesnikovm.PrometheusListener` implementation |
+| prometheusURL | String |      Prometheus URL for pushing metrics <br/> Only for `com.github.kolesnikovm.PrometheusPusher` implementation      |
+| samplersRegExp | String |                                   Regular expression for filtering sample results                                    |
+| sloLevels | String |                          Buckets for `jmeter_response_time_histogram`. Semicolon delimited                           |
 
 ## Properties
 
-| Property | Default | Comment |
-| :---: | :---: | :---: |
-| prometheus.collect_jvm | false | Boolean parameter for enabling JVM metrics collection |
-| prometheus.collect_assertions | false | Boolean parameter for enabling assertion results collection |
-| prometheus.quantiles_age | 10 | Max age in seconds for Summary collectors' quantiles |
-| prometheus.log_errors | false | Boolean parameter for enabling extended error logging |
+| Property | Default |                                      Comment                                       |
+| :---: |:-------:|:----------------------------------------------------------------------------------:|
+| prometheus.collect_jvm |  false  |               Boolean parameter for enabling JVM metrics collection                |
+| prometheus.collect_assertions |  false  |            Boolean parameter for enabling assertion results collection             |
+| prometheus.quantiles_age |   10    |                Max age in seconds for Summary collectors' quantiles                |
+| prometheus.log_errors |  false  |               Boolean parameter for enabling extended error logging                |
+| prometheus.push_interval |    5    | Metrics push interval for `com.github.kolesnikovm.PrometheusPusher` implementation |
 
 ## Metrics
 
