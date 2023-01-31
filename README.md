@@ -16,7 +16,8 @@ Then put `jmeter-prometheus-listener-x.x.x.jar` to `JMETER_HOME/lib/ext` directo
 
 ## Parameters
 
-These parameters are set in Backend Listener element. All parameters are required.
+These parameters are set in Backend Listener element. All parameters are required. You can also add custom parameters,
+that will be treated as labels and added to each metric.
 
 | Param |  Type  |                                                     Description                                                      |
 |:---:|:------:|:--------------------------------------------------------------------------------------------------------------------:|

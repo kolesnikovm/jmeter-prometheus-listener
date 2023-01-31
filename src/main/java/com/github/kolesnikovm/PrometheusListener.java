@@ -210,19 +210,22 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 
 	@Override
 	public void setupTest(BackendListenerContext context) {
-		testName = context.getParameter(TEST_NAME_KEY);
-		runId = context.getParameter(RUN_ID_KEY);
 		try {
 			nodeName = InetAddress.getLocalHost().getHostName();
 		} catch (UnknownHostException e) {
 			log.warn("Failed to get host name");
 		}
 
-
 		HashMap<String, String> defaultLabelsMap = new HashMap<>();
-		defaultLabelsMap.put(TEST_NAME, testName);
-		defaultLabelsMap.put(RUN_ID, runId);
 		defaultLabelsMap.put(NODE_NAME, nodeName);
+
+		Iterator iterator = context.getParameterNamesIterator();
+		while (iterator.hasNext()) {
+			String parameter = (String) iterator.next();
+			if (!parameter.equals(EXPORTER_PORT_KEY) && !parameter.equals(SAMPLERS_LIST_KEY) && !parameter.equals(SLO_LEVELS)) {
+				defaultLabelsMap.put(parameter, context.getParameter(parameter));
+			}
+		}
 
 		defaultLabels = defaultLabelsMap.keySet().toArray(new String[defaultLabelsMap.size()]);
 		defaultLabelValues = defaultLabelsMap.values().toArray(new String[defaultLabelsMap.size()]);
