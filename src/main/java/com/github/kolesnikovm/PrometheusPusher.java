@@ -239,7 +239,9 @@ public class PrometheusPusher extends AbstractBackendListenerClient implements R
 		}
 
 		HashMap<String, String> defaultLabelsMap = new HashMap<>();
-		defaultLabelsMap.put(NODE_NAME, nodeName);
+
+		String uuid = UUID.randomUUID().toString();
+		defaultLabelsMap.put(NODE_NAME, nodeName+":"+uuid);
 
 		Iterator iterator = context.getParameterNamesIterator();
 		while (iterator.hasNext()) {
