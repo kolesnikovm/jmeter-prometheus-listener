@@ -97,7 +97,6 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private static String REQUEST_STATUS = "requestStatus";
 	private static String REQUEST_DIRECTION = "requestDirection";
 	private static String IS_TRANSACTION = "isTransaction";
-	private static String IS_FAILURE = "isFailure";
 	private static String FAILURE_MESSAGE = "failureMessage";
 
 	private String[] defaultLabels;
@@ -105,7 +104,7 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 	private String[] threadLabels = new String[]{ THREAD_GROUP };
 	private String[] requestLabels = new String[]{ REQUEST_NAME, RESPONSE_CODE, RESPONSE_MESSAGE, REQUEST_STATUS, IS_TRANSACTION };
 	private String[] requestSizeLabels = new String[]{ REQUEST_DIRECTION, REQUEST_NAME, IS_TRANSACTION };
-	private String[] assertionResultLabels = new String[]{ REQUEST_NAME, IS_FAILURE, FAILURE_MESSAGE };
+	private String[] assertionResultLabels = new String[]{ REQUEST_NAME, FAILURE_MESSAGE };
 
 	private transient Server server;
 	// Prometheus collectors
@@ -181,9 +180,11 @@ public class PrometheusListener extends AbstractBackendListenerClient implements
 						.observe(sampleResult.getBytesAsLong());
 				if (collectAssertions) {
 					for (AssertionResult assertionResult : sampleResult.getAssertionResults()) {
-						assertionResultCollector
-								.labels(ArrayUtils.addAll(defaultLabelValues, sampleResult.getSampleLabel(), String.valueOf(assertionResult.isFailure()), assertionResult.getFailureMessage()))
-								.inc();
+						if (assertionResult.isFailure()) {
+							assertionResultCollector
+									.labels(ArrayUtils.addAll(defaultLabelValues, sampleResult.getSampleLabel(), String.valueOf(assertionResult.isFailure()), assertionResult.getFailureMessage()))
+									.inc();
+						}
 					}
 				}
 			}
