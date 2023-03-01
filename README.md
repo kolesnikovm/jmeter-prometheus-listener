@@ -42,16 +42,16 @@ that will be treated as labels and added to each metric.
 
 Every metric has default label set `testName, runId, nodeName` and also may have some additional labels. Check the table below for details on metrics and their specific labels.
 
-|             Metric             |   Type    | Labels | Comment |
-|:------------------------------:|:---------:| :---: | :---: |
-|     jmeter_active_threads      |   Gauge   | | |
-|     jmeter_running_threads     |   Gauge   | threadGroup | |
+|             Metric             |   Type    |                                  Labels                                  | Comment |
+|:------------------------------:|:---------:|:------------------------------------------------------------------------:| :---: |
+|     jmeter_active_threads      |   Gauge   |                                                                          | |
+|     jmeter_running_threads     |   Gauge   |                               threadGroup                                | |
 |        jmeter_requests         |  Counter  | requestName, requestStatus, responseCode, responseMessage, isTransaction | |
 |      jmeter_response_time      |  Summary  | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
-| jmeter_response_time_histogram | Histogram |requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds |
+| jmeter_response_time_histogram | Histogram | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds |
 |         jmeter_latency         |  Summary  | requestName, requestStatus, responseCode, responseMessage, isTransaction | Unit: milliseconds<br/> Quantiles: 0.9, 0.95, 0.99 |
-|      jmeter_request_size       |  Summary  | requestName, requestDirection, isTransaction | Unit: bytes |
-|    jmeter_assertion_results    |  Counter  | requestName, isFailure, failureMessage | |
+|      jmeter_request_size       |  Summary  |               requestName, requestDirection, isTransaction               | Unit: bytes |
+|    jmeter_assertion_results    |  Counter  |                       requestName, failureMessage                        | |
 
 ## Custom metrics
 
